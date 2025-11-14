@@ -47,7 +47,7 @@ jobs:
           cd src
           nimble install cligen fusion -y
           make genpkglist
-          sudo mv out/genpkglist /bin
+          mv out/genpkglist /bin
           cd ..
       
       #- name: Add manpages to documentation
