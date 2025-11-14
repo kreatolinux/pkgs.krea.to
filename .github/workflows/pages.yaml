@@ -79,6 +79,8 @@ jobs:
 
 
       - uses: actions/setup-go@v6
+        with:
+          check-latest: true
 
       - name: Build with Hugo
         env:
