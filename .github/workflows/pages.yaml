@@ -31,27 +31,11 @@ jobs:
   # Build job
   publish:
     runs-on: ubuntu-latest
+    container: ghcr.io/kreatolinux/builder:latest
     env:
-      HUGO_VERSION: 0.132.2
-      NIM_VERSION: 2.0.8
+      HUGO_VERSION: 0.152.2
     steps: 
       
-      - name: Install Nim
-        run: |
-          sudo apt update
-          sudo apt install build-essential -y
-          wget -O nim.tar.xz "https://nim-lang.org/download/nim-$NIM_VERSION-linux_x64.tar.xz"
-          tar -xvf nim.tar.xz
-          cd "nim-$NIM_VERSION"
-          sudo mkdir -p "/usr/include" "/usr/bin" "/etc/nim" "/usr/lib/nim"
-          sudo cp -r lib/ "/usr/lib/nim"
-          sudo cp -r compiler/ "/usr/lib/nim"
-          sudo cp -rf config/* -t "/etc/nim"
-          sudo cp -rf bin/* -t "/usr/bin"
-          sudo cp -rf "/usr/lib/nim/"*.h "/usr/include" || true
-          cd ..
-          rm -rf nim-*
-
       - name: Checkout
         uses: actions/checkout@main
         with:
@@ -77,8 +61,10 @@ jobs:
 
       - name: Install Hugo CLI
         run: |
-          wget -O ${{ runner.temp }}/hugo.deb https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_extended_${HUGO_VERSION}_linux-amd64.deb \
-          && sudo dpkg -i ${{ runner.temp }}/hugo.deb
+          wget https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_${HUGO_VERSION}_linux-amd64.tar.gz \
+          && tar -xvf hugo_${HUGO_VERSION}_linux-amd64.tar.gz \
+          && mv hugo /usr/bin/ \
+          && chmod +x /usr/bin/hugo
       
       - name: Setup Pages
         id: pages
