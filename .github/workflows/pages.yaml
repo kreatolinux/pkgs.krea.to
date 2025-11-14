@@ -76,7 +76,10 @@ jobs:
           mkdir -p "$GITHUB_WORKSPACE/content"
           genpkglist generate --all --pkgPath=kpkg-repo --output="$GITHUB_WORKSPACE/content" -v      
           rm -rf kpkg-repo
- 
+
+
+      - uses: actions/setup-go@v6
+
       - name: Build with Hugo
         env:
           # For maximum backward compatibility with Hugo modules
