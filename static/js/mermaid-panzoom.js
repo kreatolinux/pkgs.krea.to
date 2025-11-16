@@ -241,18 +241,63 @@
 
         // Make the node clickable
         node.style.cursor = 'pointer';
+
+        // Handle clicks (desktop)
         node.addEventListener('click', (e) => {
           e.stopPropagation(); // Prevent panzoom from triggering
+          e.preventDefault();
           const url = `https://pkgs.krea.to/${encodeURIComponent(packageName)}`;
           window.open(url, '_blank');
         });
 
-        // Add hover effect
+        // Handle touch events (mobile) - use closure to maintain state per node
+        let touchStartTime = 0;
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let hasMoved = false;
+
+        node.addEventListener('touchstart', (e) => {
+          touchStartTime = Date.now();
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+          hasMoved = false;
+        }, { passive: true });
+
+        node.addEventListener('touchmove', (e) => {
+          if (hasMoved) return; // Already determined this is a drag
+          const touch = e.touches[0];
+          const deltaX = Math.abs(touch.clientX - touchStartX);
+          const deltaY = Math.abs(touch.clientY - touchStartY);
+
+          // If moved more than 10px, consider it a drag/pan, not a tap
+          if (deltaX > 10 || deltaY > 10) {
+            hasMoved = true;
+          }
+        }, { passive: true });
+
+        node.addEventListener('touchend', (e) => {
+          const touchEndTime = Date.now();
+          const touchDuration = touchEndTime - touchStartTime;
+
+          // Only trigger click if it was a quick tap (less than 300ms) and didn't move much
+          if (!hasMoved && touchDuration < 300) {
+            e.stopPropagation();
+            e.preventDefault();
+            const url = `https://pkgs.krea.to/${encodeURIComponent(packageName)}`;
+            window.open(url, '_blank');
+          }
+        });
+
+        // Add hover effect (only on desktop where hover makes sense)
         node.addEventListener('mouseenter', () => {
-          node.style.opacity = '0.7';
+          if (window.matchMedia && !window.matchMedia('(hover: none)').matches) {
+            node.style.opacity = '0.7';
+          }
         });
         node.addEventListener('mouseleave', () => {
-          node.style.opacity = '1';
+          if (window.matchMedia && !window.matchMedia('(hover: none)').matches) {
+            node.style.opacity = '1';
+          }
         });
       });
     }
