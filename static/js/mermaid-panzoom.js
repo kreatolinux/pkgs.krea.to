@@ -210,10 +210,54 @@
     }
   }
 
-  // Store panzoom instances
-  const panzoomInstances = new WeakMap();
+    // Store panzoom instances
+    const panzoomInstances = new WeakMap();
 
-  // Initialize pan and zoom on mermaid diagrams
+    // Make mermaid nodes clickable
+    function makeNodesClickable(svg) {
+      // Find all node groups in the SVG
+      const nodes = svg.querySelectorAll('g.node');
+
+      nodes.forEach(node => {
+        // Get the text content of the node (package name)
+        const textElement = node.querySelector('span') || node.querySelector('text') || node.querySelector('foreignObject span');
+        if (!textElement) return;
+
+        let packageName = '';
+        if (textElement.tagName === 'SPAN') {
+          packageName = textElement.textContent.trim();
+        } else if (textElement.tagName === 'text') {
+          packageName = textElement.textContent.trim();
+        } else {
+          // Handle foreignObject case
+          const span = textElement.querySelector('span');
+          if (span) {
+            packageName = span.textContent.trim();
+          }
+        }
+
+        // Skip if no package name found or if it's not a valid package name
+        if (!packageName || packageName.length === 0) return;
+
+        // Make the node clickable
+        node.style.cursor = 'pointer';
+        node.addEventListener('click', (e) => {
+          e.stopPropagation(); // Prevent panzoom from triggering
+          const url = `https://pkgs.krea.to/${encodeURIComponent(packageName)}`;
+          window.open(url, '_blank');
+        });
+
+        // Add hover effect
+        node.addEventListener('mouseenter', () => {
+          node.style.opacity = '0.7';
+        });
+        node.addEventListener('mouseleave', () => {
+          node.style.opacity = '1';
+        });
+      });
+    }
+
+    // Initialize pan and zoom on mermaid diagrams
   function initMermaidPanZoom() {
     const mermaidContainers = document.querySelectorAll('.mermaid');
     
@@ -228,9 +272,12 @@
       svg.style.maxWidth = 'none';
       svg.style.maxHeight = 'none';
       
-      // Initialize panzoom
-      const panzoom = new PanZoom(svg);
-      panzoomInstances.set(svg, panzoom);
+        // Initialize panzoom
+        const panzoom = new PanZoom(svg);
+        panzoomInstances.set(svg, panzoom);
+
+        // Make nodes clickable
+        makeNodesClickable(svg);
     });
   }
 
@@ -238,14 +285,26 @@
   function waitForMermaidAndInit() {
     // Give mermaid a moment to initialize
     setTimeout(() => {
-      initMermaidPanZoom();
-      
-      // Also watch for changes (theme switches, etc.)
+        initMermaidPanZoom();
+
+        // Re-apply click handlers to any newly rendered diagrams
+        document.querySelectorAll('.mermaid svg').forEach(svg => {
+          if (!panzoomInstances.has(svg)) {
+            makeNodesClickable(svg);
+          }
+        });
+
+        // Also watch for changes (theme switches, etc.)
       const observer = new MutationObserver(() => {
         // Use a debounce to avoid multiple rapid initializations
         clearTimeout(observer.timeout);
         observer.timeout = setTimeout(() => {
           initMermaidPanZoom();
+
+          // Re-apply click handlers after theme changes
+          document.querySelectorAll('.mermaid svg').forEach(svg => {
+            makeNodesClickable(svg);
+          });
         }, 200);
       });
       
